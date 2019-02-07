@@ -7,13 +7,13 @@
 
 InfluxArduino influx;
 
-const char WIFI_NAME[] = "xxyy";
-const char WIFI_PASS[] = "zz";
+const char WIFI_NAME[] = "";
+const char WIFI_PASS[] = "";
 
-const char INFLUX_DATABASE[] = "ruuvi_esp32";
-const char INFLUX_IP[] = "192.168.x.y";
-const char INFLUX_USER[] = "some";
-const char INFLUX_PASS[] = "user";
+const char INFLUX_DATABASE[] = "";
+const char INFLUX_IP[] = "";
+const char INFLUX_USER[] = "";
+const char INFLUX_PASS[] = "";
 const char INFLUX_MEASUREMENT[] = "ruuviTag";
 
 char formatStringFive[] = "temperature=%0.3f,pressure=%i,humidity=%0.3f,accel_x=%i,accel_y=%i,accel_z=%i,milivolts=%i";
@@ -25,6 +25,7 @@ short getShort(byte* data, int index)
   return (short)((data[index] << 8) + (data[index + 1]));
 }
 
+// 8 bit
 short getShortone(byte* data, int index)
 {
   return (short)((data[index]));
@@ -36,6 +37,7 @@ unsigned short getUShort(byte* data, int index)
   return (unsigned short)((data[index] << 8) + (data[index + 1]));
 }
 
+// 8 bit
 unsigned short getUShortone(byte* data, int index)
 {
   return (unsigned short)((data[index]));
@@ -62,7 +64,6 @@ void DecodeV3(byte* data)
     Serial.print("error: ");
     Serial.println(influx.getResponse());
   }
- 
 }
 
   void DecodeV5(byte* data)
@@ -98,14 +99,25 @@ class AdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
       if (mData[0] == 0x99 && mData[1] == 0x04 && mData[2] == 0x03)
       {
-       /* Serial.print (mData[0]);
+     /* Serial.print (mData[0]);
         Serial.print (" ; ");
         Serial.print (mData[1]);
         Serial.print (" ; ");
         Serial.print (mData[2]);
         Serial.println (" ; ");
-        */
+     */
         DecodeV3(mData);
+      }
+      if (mData[0] == 0x99 && mData[1] == 0x04 && mData[2] == 0x05)
+      {
+     /* Serial.print (mData[0]);
+        Serial.print (" ; ");
+        Serial.print (mData[1]);
+        Serial.print (" ; ");
+        Serial.print (mData[2]);
+        Serial.println (" ; ");
+     */
+        DecodeV5(mData);
       }
     }
 };
