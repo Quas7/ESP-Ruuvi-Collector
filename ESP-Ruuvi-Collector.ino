@@ -46,12 +46,12 @@ unsigned short getUShortone(byte* data, int index)
 void DecodeV3(byte* data)
 {
   digitalWrite(22, HIGH);
-  short tempRaw = getShortone(data, 4) - 2;
+  short tempRaw = getShortone(data, 4);
   short tempRawdec = getUShortone(data, 5);
-  double temperature = (double)tempRaw + (double)tempRawdec / 100;
+  double temperature = (double)tempRaw + (double)tempRawdec / 100; //add offset correction here, if needed
 
   byte humRaw = getUShortone(data, 3);
-  short humidity = humRaw / 2;
+  short humidity = humRaw / 2; //add offset correction here, if needed
   unsigned int pressure = (getUShort(data, 6) + 50000);
   unsigned int voltageraw = getUShort(data, 14);
   short voltage = (short)voltageraw;
@@ -70,9 +70,9 @@ void DecodeV3(byte* data)
   {
   digitalWrite(22, LOW);
   short tempRaw = getShort(data, 3);
-  double temperature = (double)tempRaw * 0.005;
+  double temperature = (double)tempRaw * 0.005; //add offset correction here, if needed
   unsigned short humRaw = getUShort(data, 5);
-  double humidity = (double)humRaw * 0.0025;
+  double humidity = (double)humRaw * 0.0025; //add offset correction here, if needed
   unsigned int pressure = (getUShort(data, 7) + 50000);
   short accelX = getShort(data, 9);
   short accelY = getShort(data, 11);
