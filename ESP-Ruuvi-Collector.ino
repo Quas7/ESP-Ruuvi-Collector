@@ -3,6 +3,7 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 #include <WiFi.h>
+#include <esp_system.h>
 #include "InfluxArduino.hpp"
 
 InfluxArduino influx;
@@ -150,5 +151,6 @@ void setup() {
 
 void loop() {
   BLEScanResults foundDevices = pBLEScan->start(1);
+  yield();
   digitalWrite(22, LOW);
 }
