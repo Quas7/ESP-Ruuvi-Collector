@@ -6,6 +6,13 @@
 #include <esp_system.h>
 #include "InfluxArduino.hpp"
 
+const int wdtTimeout = 30000;  //time in ms to trigger the watchdog
+
+void IRAM_ATTR resetModule() {
+  ets_printf("reboot\n");
+  esp_restart();
+}
+
 InfluxArduino influx;
 
 const char WIFI_NAME[] = "";
@@ -46,6 +53,7 @@ unsigned short getUShortone(byte* data, int index)
 
 void DecodeV3(byte* data)
 {
+  yield();  // reset esp watchdog 
   digitalWrite(22, HIGH);
   short tempRaw = getShortone(data, 4);
   short tempRawdec = getUShortone(data, 5);
@@ -69,6 +77,7 @@ void DecodeV3(byte* data)
 
   void DecodeV5(byte* data)
   {
+  yield();  // reset esp watchdog 
   digitalWrite(22, LOW);
   short tempRaw = getShort(data, 3);
   double temperature = (double)tempRaw * 0.005; //add offset correction here, if needed
@@ -97,35 +106,29 @@ void DecodeV3(byte* data)
 class AdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     void onResult(BLEAdvertisedDevice advertisedDevice) {
       byte* mData = (byte*)advertisedDevice.getManufacturerData().data();
-
+      yield();  // reset esp watchdog 
       if (mData[0] == 0x99 && mData[1] == 0x04 && mData[2] == 0x03)
       {
-     /* Serial.print (mData[0]);
-        Serial.print (" ; ");
-        Serial.print (mData[1]);
-        Serial.print (" ; ");
-        Serial.print (mData[2]);
-        Serial.println (" ; ");
-     */
         DecodeV3(mData);
       }
+ 
       if (mData[0] == 0x99 && mData[1] == 0x04 && mData[2] == 0x05)
       {
-     /* Serial.print (mData[0]);
-        Serial.print (" ; ");
-        Serial.print (mData[1]);
-        Serial.print (" ; ");
-        Serial.print (mData[2]);
-        Serial.println (" ; ");
-     */
         DecodeV5(mData);
       }
+      
+    yield();  // reset esp watchdog 
     }
 };
 
 BLEScan* pBLEScan;
 
 void setup() {
+  //WDT Stuff
+  timer = timerBegin(0, 80, true);                  //timer 0, div 80
+  timerAttachInterrupt(timer, &resetModule, true);  //attach callback
+  timerAlarmWrite(timer, wdtTimeout * 1000, false); //set time in us
+  timerAlarmEnable(timer);                          //enable interrupt
 
   pinMode(22, OUTPUT);
   digitalWrite(22, HIGH);
@@ -150,7 +153,16 @@ void setup() {
 }
 
 void loop() {
+  timerWrite(timer, 0); //reset timer (feed watchdog)
+  long loopTime = millis();
   BLEScanResults foundDevices = pBLEScan->start(1);
   yield();
   digitalWrite(22, LOW);
+  loopTime = millis() - loopTime;
+  if (loopTimeMax < loopTime) loopTimeMax=loopTime;
+  
+  Serial.print("current loop time (ms): ");
+  Serial.print(loopTime); 
+  Serial.print(" / MaxTime: ");
+  Serial.println(loopTimeMax); //should be under 30000
 }
